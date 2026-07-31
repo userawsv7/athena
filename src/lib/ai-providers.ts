@@ -30,13 +30,49 @@ export async function generateResponse(
   message: string,
   mode: string,
   technology: string,
-  sessionId: string
+  sessionId: string,
+  providedApiKeys?: Record<string, string>
 ): Promise<AIResponse> {
   const systemPrompt = getSystemPrompt(mode, technology, sessionId);
 
-  // Read environment variables fresh at runtime
-  const allProviders = getProviders();
-  const availableProviders = allProviders.filter(p => p.key && p.key.trim() !== '');
+  // Check both environment variables and provided keys from frontend
+  const envProviders = getProviders();
+  const availableProviders: Array<{name: string; key: string; displayName: string}> = [];
+
+  // First check provided keys from frontend (priority)
+  if (providedApiKeys) {
+    Object.entries(providedApiKeys).forEach(([keyName, keyValue]) => {
+      if (keyValue && keyValue.trim() !== '') {
+        const providerName = keyName.replace('_API_KEY', '').toLowerCase();
+        const displayMap: Record<string, string> = {
+          'groq': 'Groq API Key',
+          'gemini': 'Google Gemini API Key',
+          'hf': 'Hugging Face API Key',
+          'openrouter': 'OpenRouter API Key',
+          'mistral': 'Mistral API Key',
+          'cohere': 'Cohere API Key',
+          'deepinfra': 'DeepInfra API Key',
+          'cerebras': 'Cerebras API Key',
+          'sambanova': 'SambaNova API Key',
+          'fireworks': 'Fireworks AI API Key',
+          'replicate': 'Replicate API Key',
+          'cloudflare': 'Cloudflare AI API Key',
+        };
+        availableProviders.push({
+          name: providerName,
+          key: keyValue,
+          displayName: displayMap[providerName] || keyName
+        });
+      }
+    });
+  }
+
+  // Then add environment variable providers
+  envProviders.forEach(provider => {
+    if (provider.key && provider.key.trim() !== '' && !availableProviders.find(p => p.name === provider.name)) {
+      availableProviders.push(provider);
+    }
+  });
 
   console.log('Available providers:', availableProviders.map(p => p.name));
 

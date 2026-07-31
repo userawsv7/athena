@@ -5,7 +5,7 @@ import { sessionStore } from '@/lib/session-store';
 
 export async function POST(req: NextRequest) {
   try {
-    const { sessionId, message, mode, technology } = await req.json();
+    const { sessionId, message, mode, technology, apiKeys } = await req.json();
 
     // Try to use database, fall back to in-memory store if not available
     const useDatabase = !!process.env.DATABASE_URL;
@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
     // Generate AI response
     let response;
     try {
-      response = await generateResponse(message, mode, technology, sessionId);
+      response = await generateResponse(message, mode, technology, sessionId, apiKeys);
     } catch (aiError: any) {
       console.error('AI Provider error:', aiError);
 
