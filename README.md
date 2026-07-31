@@ -185,13 +185,27 @@ Generate:
 - Mind map, flash cards
 - Interview questions, production scenarios
 
-## AI Provider Router
+## AI Provider Configuration
 
-**Primary:** GROQ API
+**Mandatory Providers (at least 2 required):**
+- Google Gemini API Key
+- Groq API Key
 
-**Fallback order:** Groq → Google Gemini → OpenRouter → Hugging Face → Mistral → Cohere → DeepInfra → Cerebras → SambaNova → Fireworks AI → Replicate → Cloudflare AI
+**Optional Providers:**
+- Hugging Face API Key
+- OpenRouter API Key
+- Mistral API Key
+- Cohere API Key
+- DeepInfra API Key
+- Cerebras API Key
+- SambaNova API Key
+- Fireworks AI API Key
+- Replicate API Key
+- Cloudflare API Key
 
-Before calling, check available API keys. If primary fails, automatically switch without interrupting the user.
+**Parallel Execution:** All configured providers are used simultaneously with load splitting for best response quality. The system automatically handles failures and returns the best available response.
+
+**Error Handling:** Clear error messages indicate which mandatory providers are missing and require configuration.
 
 ## Token Optimization
 

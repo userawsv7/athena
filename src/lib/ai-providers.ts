@@ -8,20 +8,27 @@ interface AIResponse {
   };
 }
 
-const PROVIDERS = [
-  { name: 'gemini', key: process.env.GEMINI_API_KEY },
-  { name: 'groq', key: process.env.GROQ_API_KEY },
-  { name: 'hf', key: process.env.HF_API_KEY },
-  { name: 'openrouter', key: process.env.OPENROUTER_API_KEY },
-  { name: 'mistral', key: process.env.MISTRAL_API_KEY },
-  { name: 'cohere', key: process.env.COHERE_API_KEY },
-  { name: 'deepinfra', key: process.env.DEEPINFRA_API_KEY },
-  { name: 'cerebras', key: process.env.CEREBRAS_API_KEY },
-  { name: 'sambanova', key: process.env.SAMBANOVA_API_KEY },
-  { name: 'fireworks', key: process.env.FIREWORKS_API_KEY },
-  { name: 'replicate', key: process.env.REPLICATE_API_KEY },
-  { name: 'cloudflare', key: process.env.CLOUDFLARE_AI_API_KEY },
+// Mandatory providers (at least 2 required)
+const MANDATORY_PROVIDERS = [
+  { name: 'gemini', key: process.env.GEMINI_API_KEY, displayName: 'Google Gemini API Key' },
+  { name: 'groq', key: process.env.GROQ_API_KEY, displayName: 'Groq API Key' },
 ];
+
+// Optional providers
+const OPTIONAL_PROVIDERS = [
+  { name: 'hf', key: process.env.HF_API_KEY, displayName: 'Hugging Face API Key' },
+  { name: 'openrouter', key: process.env.OPENROUTER_API_KEY, displayName: 'OpenRouter API Key' },
+  { name: 'mistral', key: process.env.MISTRAL_API_KEY, displayName: 'Mistral API Key' },
+  { name: 'cohere', key: process.env.COHERE_API_KEY, displayName: 'Cohere API Key' },
+  { name: 'deepinfra', key: process.env.DEEPINFRA_API_KEY, displayName: 'DeepInfra API Key' },
+  { name: 'cerebras', key: process.env.CEREBRAS_API_KEY, displayName: 'Cerebras API Key' },
+  { name: 'sambanova', key: process.env.SAMBANOVA_API_KEY, displayName: 'SambaNova API Key' },
+  { name: 'fireworks', key: process.env.FIREWORKS_API_KEY, displayName: 'Fireworks AI API Key' },
+  { name: 'replicate', key: process.env.REPLICATE_API_KEY, displayName: 'Replicate API Key' },
+  { name: 'cloudflare', key: process.env.CLOUDFLARE_AI_API_KEY, displayName: 'Cloudflare API Key' },
+];
+
+const ALL_PROVIDERS = [...MANDATORY_PROVIDERS, ...OPTIONAL_PROVIDERS];
 
 export async function generateResponse(
   message: string,
@@ -29,24 +36,52 @@ export async function generateResponse(
   technology: string,
   sessionId: string
 ): Promise<AIResponse> {
-  const systemPrompt = getSystemPrompt(mode, technology);
+  const systemPrompt = getSystemPrompt(mode, technology, sessionId);
 
-  for (const provider of PROVIDERS) {
-    if (!provider.key) continue;
-
-    try {
-      const response = await callProvider({ name: provider.name, key: provider.key! }, systemPrompt, message);
-      return response;
-    } catch (error) {
-      console.error(`${provider.name} failed:`, error);
-      continue;
-    }
+  // Check mandatory providers
+  const configuredMandatory = MANDATORY_PROVIDERS.filter(p => p.key);
+  if (configuredMandatory.length < 2) {
+    const missing = MANDATORY_PROVIDERS.filter(p => !p.key).map(p => p.displayName);
+    throw new Error(`At least 2 mandatory providers required. Missing: ${missing.join(', ')}`);
   }
 
-  throw new Error('All providers failed');
+  // Get all available providers (mandatory + configured optional)
+  const availableProviders = [
+    ...configuredMandatory,
+    ...OPTIONAL_PROVIDERS.filter(p => p.key)
+  ];
+
+  if (availableProviders.length === 0) {
+    throw new Error('No AI providers available. Add at least one API key to environment variables.');
+  }
+
+  // Parallel execution with load splitting for best response
+  const promises = availableProviders.map(async (provider) => {
+    try {
+      const response = await callProvider({ name: provider.name, key: provider.key! }, systemPrompt, message);
+      return { success: true, response, provider: provider.name };
+    } catch (error) {
+      console.error(`${provider.name} failed:`, error);
+      return { success: false, error, provider: provider.name };
+    }
+  });
+
+  const results = await Promise.allSettled(promises);
+  const successful = results
+    .filter((result): result is PromiseFulfilledResult<any> =>
+      result.status === 'fulfilled' && result.value.success
+    )
+    .map(result => result.value);
+
+  if (successful.length === 0) {
+    throw new Error('All providers failed');
+  }
+
+  // Return the best response (first successful for now, can implement ranking)
+  return successful[0].response;
 }
 
-function getSystemPrompt(mode: string, technology: string): string {
+function getSystemPrompt(mode: string, technology: string, sessionId: string): string {
   const basePrompt = `You are AthenaForge AI. Motto: "Total attention faces the problem. Like a flame, it burns through until the problem disappears."
 
 You teach every technology from four perspectives:
@@ -56,15 +91,23 @@ You teach every technology from four perspectives:
 4. PROBLEM SOLVER PERSPECTIVE - Complete problem resolution
 
 Current technology: ${technology}
-Current mode: ${mode}`;
+Current mode: ${mode}
+Session context: ${sessionId}`;
 
   const modePrompts: Record<string, string> = {
-    learning: `${basePrompt}\n\nYou are in LEARNING MODE. Create mind maps, explain concepts thoroughly, provide chapter roadmaps, and create hands-on labs.`,
-    troubleshooting: `${basePrompt}\n\nYou are in TROUBLESHOOTING MODE. Follow the complete flow: Problem understanding → Symptoms → Causes → Investigation → Commands → Analysis → Root cause → Solution → Prevention.`,
-    incident: `${basePrompt}\n\nYou are in PRODUCTION INCIDENT SIMULATION MODE. Create realistic incidents with symptoms, investigation steps, root cause analysis, fixes, and prevention strategies.`,
-    interview: `${basePrompt}\n\nYou are in INTERVIEW MODE. Ask questions at basic, intermediate, and advanced levels. Include architecture discussions and scenario-based questions.`,
-    code_review: `${basePrompt}\n\nYou are in CODE REVIEW MODE. Analyze code from creator, maintainer, operator, and problem-solver perspectives.`,
-    architecture: `${basePrompt}\n\nYou are in ARCHITECTURE REVIEW MODE. Deep dive into system architecture, design decisions, and trade-offs.`,
+    learning: `${basePrompt}\n\nYou are in LEARNING MODE. For any topic provide:
+1. ALL CONCEPTS - Complete theory, architecture, internals
+2. RELATED COMMANDS - Every command with options, examples, use cases
+3. TROUBLESHOOTING - Common issues, error messages, solutions, diagnostics
+4. REAL-TIME PRODUCTION ISSUES - Live scenarios, incidents, war stories
+5. DIAGRAM VISUALIZATION - ASCII art, flowcharts, architecture diagrams
+6. HANDS-ON LABS - Step-by-step practical exercises
+Structure response as comprehensive learning module with mind maps and chapter roadmaps.`,
+    troubleshooting: `${basePrompt}\n\nYou are in TROUBLESHOOTING MODE. Follow the complete flow: Problem understanding → Symptoms → Causes → Investigation → Commands → Analysis → Root cause → Solution → Prevention. Always include relevant commands, logs analysis, and production scenarios.`,
+    incident: `${basePrompt}\n\nYou are in PRODUCTION INCIDENT SIMULATION MODE. Create realistic incidents with symptoms, investigation steps, root cause analysis, fixes, and prevention strategies. Include actual commands used, logs to check, and production battle stories.`,
+    interview: `${basePrompt}\n\nYou are in INTERVIEW MODE. Ask questions at basic, intermediate, and advanced levels. Include architecture discussions, scenario-based questions, troubleshooting scenarios, and production war stories.`,
+    code_review: `${basePrompt}\n\nYou are in CODE REVIEW MODE. Analyze code from creator, maintainer, operator, and problem-solver perspectives. Include performance analysis, production considerations, and real-world scenarios.`,
+    architecture: `${basePrompt}\n\nYou are in ARCHITECTURE REVIEW MODE. Deep dive into system architecture, design decisions, trade-offs, scaling considerations, and production deployments with diagrams and real-world examples.`,
   };
 
   return modePrompts[mode] || basePrompt;
