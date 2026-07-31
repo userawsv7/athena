@@ -36,6 +36,7 @@ export async function generateResponse(
   sessionId: string
 ): Promise<AIResponse> {
   const systemPrompt = getSystemPrompt(mode, technology, sessionId);
+  console.log("Gemini key exists:", !!process.env.GEMINI_API_KEY);
 
   // Check mandatory providers - require at least 2 total, but can use any available
   const configuredMandatory = MANDATORY_PROVIDERS.filter(p => p.key);
