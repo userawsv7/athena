@@ -1,0 +1,59 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sessions  Session[]
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  userId       String
+  sessionId    String   @unique
+  technology   String?
+  currentChapter String?
+  currentTopic   String?
+  completedTopics String[]
+  learningProgress Float @default(0)
+  weakAreas      String[]
+  mistakes       Json?
+  nextTopic      String?
+  mode           String @default("learning")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user         User     @relation(fields: [userId], references: [id])
+  messages     Message[]
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  sessionId String
+  role      String
+  content   String   @db.Text
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  session   Session  @relation(fields: [sessionId], references: [sessionId])
+}
+
+model ProviderUsage {
+  id           String   @id @default(cuid())
+  provider     String
+  requestCount Int      @default(0)
+  tokenCount   Int      @default(0)
+  errorCount   Int      @default(0)
+  lastUsed     DateTime @default(now())
+  healthStatus String   @default("healthy")
+}
