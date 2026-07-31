@@ -241,7 +241,7 @@ async function callProvider(
       case 'gemini':
         console.log(`[Gemini] Attempting with key length: ${provider.key.length}`);
         const genAI = new GoogleGenerativeAI(provider.key);
-        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+        const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
 
         const result = await model.generateContent({
           contents: [{
@@ -269,7 +269,7 @@ async function callProvider(
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            model: 'llama-3.1-70b-versatile',
+            model: 'llama-3.3-70b-versatile',
             messages: [{ role: 'user', content: fullPrompt }],
             max_tokens: 4000,
           }),
