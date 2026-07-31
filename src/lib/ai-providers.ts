@@ -40,6 +40,7 @@ export async function generateResponse(
 
   // Check mandatory providers - require at least 2 total, but can use any available
   console.log("ENV CHECK:", { GEMINI: !!process.env.GEMINI_API_KEY, GROQ: !!process.env.GROQ_API_KEY });
+  console.log("RUNTIME ENV:", { GEMINI: process.env.GEMINI_API_KEY ? "YES" : "NO", GROQ: process.env.GROQ_API_KEY ? "YES" : "NO" });
   const configuredMandatory = MANDATORY_PROVIDERS.filter(p => p.key);
   const configuredOptional = OPTIONAL_PROVIDERS.filter(p => p.key);
   const totalConfigured = configuredMandatory.length + configuredOptional.length;
