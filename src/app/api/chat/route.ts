@@ -56,13 +56,13 @@ export async function POST(req: NextRequest) {
     } catch (aiError: any) {
       console.error('AI Provider error:', aiError);
 
-      if (aiError.message.includes('All providers failed')) {
+      if (aiError.message.includes('No AI providers configured') || aiError.message.includes('At least 2 API providers')) {
         return NextResponse.json(
           {
             error: 'No AI providers available',
-            details: 'No API keys configured for AI providers',
-            action: 'Add at least one AI provider API key to environment variables',
-            providers: 'Set one of: GROQ_API_KEY, GEMINI_API_KEY, HF_API_KEY, OPENROUTER_API_KEY, MISTRAL_API_KEY, etc.'
+            details: aiError.message,
+            action: 'Add at least 2 AI provider API keys via the settings modal',
+            providers: 'Configure at least 2 providers from the modal'
           },
           { status: 503 }
         );
