@@ -9,20 +9,22 @@ interface AIResponse {
 }
 
 // Provider fallback order: Best to Good
-const PROVIDERS = [
-  { name: 'gemini', key: process.env.GEMINI_API_KEY, displayName: 'Google Gemini API Key' },
-  { name: 'groq', key: process.env.GROQ_API_KEY, displayName: 'Groq API Key' },
-  { name: 'openrouter', key: process.env.OPENROUTER_API_KEY, displayName: 'OpenRouter API Key' },
-  { name: 'hf', key: process.env.HF_API_KEY, displayName: 'Hugging Face API Key' },
-  { name: 'mistral', key: process.env.MISTRAL_API_KEY, displayName: 'Mistral API Key' },
-  { name: 'cohere', key: process.env.COHERE_API_KEY, displayName: 'Cohere API Key' },
-  { name: 'deepinfra', key: process.env.DEEPINFRA_API_KEY, displayName: 'DeepInfra API Key' },
-  { name: 'cerebras', key: process.env.CEREBRAS_API_KEY, displayName: 'Cerebras API Key' },
-  { name: 'sambanova', key: process.env.SAMBANOVA_API_KEY, displayName: 'SambaNova API Key' },
-  { name: 'fireworks', key: process.env.FIREWORKS_API_KEY, displayName: 'Fireworks AI API Key' },
-  { name: 'replicate', key: process.env.REPLICATE_API_KEY, displayName: 'Replicate API Key' },
-  { name: 'cloudflare', key: process.env.CLOUDFLARE_AI_API_KEY, displayName: 'Cloudflare API Key' },
-];
+function getProviders() {
+  return [
+    { name: 'gemini', key: process.env.GEMINI_API_KEY, displayName: 'Google Gemini API Key' },
+    { name: 'groq', key: process.env.GROQ_API_KEY, displayName: 'Groq API Key' },
+    { name: 'openrouter', key: process.env.OPENROUTER_API_KEY, displayName: 'OpenRouter API Key' },
+    { name: 'hf', key: process.env.HF_API_KEY, displayName: 'Hugging Face API Key' },
+    { name: 'mistral', key: process.env.MISTRAL_API_KEY, displayName: 'Mistral API Key' },
+    { name: 'cohere', key: process.env.COHERE_API_KEY, displayName: 'Cohere API Key' },
+    { name: 'deepinfra', key: process.env.DEEPINFRA_API_KEY, displayName: 'DeepInfra API Key' },
+    { name: 'cerebras', key: process.env.CEREBRAS_API_KEY, displayName: 'Cerebras API Key' },
+    { name: 'sambanova', key: process.env.SAMBANOVA_API_KEY, displayName: 'SambaNova API Key' },
+    { name: 'fireworks', key: process.env.FIREWORKS_API_KEY, displayName: 'Fireworks AI API Key' },
+    { name: 'replicate', key: process.env.REPLICATE_API_KEY, displayName: 'Replicate API Key' },
+    { name: 'cloudflare', key: process.env.CLOUDFLARE_AI_API_KEY, displayName: 'Cloudflare API Key' },
+  ];
+}
 
 export async function generateResponse(
   message: string,
@@ -40,11 +42,12 @@ export async function generateResponse(
     OPENROUTER: !!process.env.OPENROUTER_API_KEY
   });
 
-  // Filter configured providers
-  const availableProviders = PROVIDERS.filter(p => p.key);
+  // Filter configured providers - read env vars at runtime
+  const allProviders = getProviders();
+  const availableProviders = allProviders.filter(p => p.key);
 
   if (availableProviders.length === 0) {
-    const allProviderNames = PROVIDERS.map(p => p.displayName);
+    const allProviderNames = allProviders.map(p => p.displayName);
     throw new Error(`No AI providers configured. Set one of: ${allProviderNames.join(', ')}`);
   }
 
