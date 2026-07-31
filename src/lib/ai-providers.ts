@@ -132,7 +132,7 @@ async function callProvider(
 
   if (provider.name === 'gemini' && provider.key) {
     const genAI = new GoogleGenerativeAI(provider.key);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
     const result = await model.generateContent({
       contents: [{
