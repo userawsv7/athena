@@ -8,15 +8,12 @@ interface AIResponse {
   };
 }
 
-// Mandatory providers (at least 2 required)
-const MANDATORY_PROVIDERS = [
+// Provider fallback order: Best to Good
+const PROVIDERS = [
   { name: 'gemini', key: process.env.GEMINI_API_KEY, displayName: 'Google Gemini API Key' },
-];
-
-// Optional providers
-const OPTIONAL_PROVIDERS = [
-  { name: 'hf', key: process.env.HF_API_KEY, displayName: 'Hugging Face API Key' },
+  { name: 'groq', key: process.env.GROQ_API_KEY, displayName: 'Groq API Key' },
   { name: 'openrouter', key: process.env.OPENROUTER_API_KEY, displayName: 'OpenRouter API Key' },
+  { name: 'hf', key: process.env.HF_API_KEY, displayName: 'Hugging Face API Key' },
   { name: 'mistral', key: process.env.MISTRAL_API_KEY, displayName: 'Mistral API Key' },
   { name: 'cohere', key: process.env.COHERE_API_KEY, displayName: 'Cohere API Key' },
   { name: 'deepinfra', key: process.env.DEEPINFRA_API_KEY, displayName: 'DeepInfra API Key' },
@@ -27,8 +24,6 @@ const OPTIONAL_PROVIDERS = [
   { name: 'cloudflare', key: process.env.CLOUDFLARE_AI_API_KEY, displayName: 'Cloudflare API Key' },
 ];
 
-const ALL_PROVIDERS = [...MANDATORY_PROVIDERS, ...OPTIONAL_PROVIDERS];
-
 export async function generateResponse(
   message: string,
   mode: string,
@@ -38,22 +33,18 @@ export async function generateResponse(
   const systemPrompt = getSystemPrompt(mode, technology, sessionId);
   console.log("Gemini key exists:", !!process.env.GEMINI_API_KEY);
 
-  // Check mandatory providers - require at least 2 total, but can use any available
-  console.log("ENV CHECK:", { GEMINI: !!process.env.GEMINI_API_KEY, GROQ: !!process.env.GROQ_API_KEY });
-  console.log("RUNTIME ENV:", { GEMINI: process.env.GEMINI_API_KEY ? "YES" : "NO", GROQ: process.env.GROQ_API_KEY ? "YES" : "NO" });
-  const configuredMandatory = MANDATORY_PROVIDERS.filter(p => p.key);
-  const configuredOptional = OPTIONAL_PROVIDERS.filter(p => p.key);
-  const totalConfigured = configuredMandatory.length + configuredOptional.length;
+  // Check all providers - use any that are configured
+  console.log("ENV CHECK:", {
+    GEMINI: !!process.env.GEMINI_API_KEY,
+    GROQ: !!process.env.GROQ_API_KEY,
+    OPENROUTER: !!process.env.OPENROUTER_API_KEY
+  });
 
-  if (totalConfigured === 0) {
-    throw new Error('No AI providers available. Add at least one API key to environment variables.');
-  }
-
-  // Use all configured providers (mandatory + optional)
-  const availableProviders = [...configuredMandatory, ...configuredOptional];
+  // Filter configured providers
+  const availableProviders = PROVIDERS.filter(p => p.key);
 
   if (availableProviders.length === 0) {
-    const allProviderNames = [...MANDATORY_PROVIDERS, ...OPTIONAL_PROVIDERS].map(p => p.displayName);
+    const allProviderNames = PROVIDERS.map(p => p.displayName);
     throw new Error(`No AI providers configured. Set one of: ${allProviderNames.join(', ')}`);
   }
 
