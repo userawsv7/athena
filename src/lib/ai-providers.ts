@@ -31,17 +31,15 @@ export async function generateResponse(
   mode: string,
   technology: string,
   sessionId: string,
-  providedApiKeys?: Record<string, string>
+  apiKeys: Record<string, string>
 ): Promise<AIResponse> {
   const systemPrompt = getSystemPrompt(mode, technology, sessionId);
 
-  // Check both environment variables and provided keys from frontend
-  const envProviders = getProviders();
+  // Only use keys from frontend - no env var checking needed
   const availableProviders: Array<{name: string; key: string; displayName: string}> = [];
 
-  // First check provided keys from frontend (priority)
-  if (providedApiKeys) {
-    Object.entries(providedApiKeys).forEach(([keyName, keyValue]) => {
+  if (apiKeys) {
+    Object.entries(apiKeys).forEach(([keyName, keyValue]) => {
       if (keyValue && keyValue.trim() !== '') {
         const providerName = keyName.replace('_API_KEY', '').toLowerCase();
         const displayMap: Record<string, string> = {
@@ -67,23 +65,14 @@ export async function generateResponse(
     });
   }
 
-  // Then add environment variable providers
-  envProviders.forEach(provider => {
-    if (provider.key && provider.key.trim() !== '' && !availableProviders.find(p => p.name === provider.name)) {
-      availableProviders.push({
-        name: provider.name,
-        key: provider.key!,
-        displayName: provider.displayName
-      });
-    }
-  });
-
-  console.log('Available providers:', availableProviders.map(p => p.name));
+  console.log('Available providers from frontend:', availableProviders.map(p => p.name));
 
   if (availableProviders.length === 0) {
-    const configuredKeys = allProviders.filter(p => p.key);
-    console.error('No providers with valid keys. Keys present:', configuredKeys.map(p => p.name));
-    const allProviderNames = allProviders.map(p => p.displayName);
+    const allProviderNames = [
+      'GROQ_API_KEY', 'GEMINI_API_KEY', 'HF_API_KEY', 'OPENROUTER_API_KEY',
+      'MISTRAL_API_KEY', 'COHERE_API_KEY', 'DEEPINFRA_API_KEY', 'CEREBRAS_API_KEY',
+      'SAMBANOVA_API_KEY', 'FIREWORKS_API_KEY', 'REPLICATE_API_KEY', 'CLOUDFLARE_AI_API_KEY'
+    ];
     throw new Error(`No AI providers configured. Set one of: ${allProviderNames.join(', ')}`);
   }
 
