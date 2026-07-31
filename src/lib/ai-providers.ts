@@ -8,11 +8,11 @@ interface AIResponse {
   };
 }
 
-// Provider fallback order: Best to Good
+// Provider fallback order: Fastest/Best to Good (read env vars at runtime)
 function getProviders() {
   return [
-    { name: 'gemini', key: process.env.GEMINI_API_KEY, displayName: 'Google Gemini API Key' },
     { name: 'groq', key: process.env.GROQ_API_KEY, displayName: 'Groq API Key' },
+    { name: 'gemini', key: process.env.GEMINI_API_KEY, displayName: 'Google Gemini API Key' },
     { name: 'openrouter', key: process.env.OPENROUTER_API_KEY, displayName: 'OpenRouter API Key' },
     { name: 'hf', key: process.env.HF_API_KEY, displayName: 'Hugging Face API Key' },
     { name: 'mistral', key: process.env.MISTRAL_API_KEY, displayName: 'Mistral API Key' },
@@ -22,7 +22,7 @@ function getProviders() {
     { name: 'sambanova', key: process.env.SAMBANOVA_API_KEY, displayName: 'SambaNova API Key' },
     { name: 'fireworks', key: process.env.FIREWORKS_API_KEY, displayName: 'Fireworks AI API Key' },
     { name: 'replicate', key: process.env.REPLICATE_API_KEY, displayName: 'Replicate API Key' },
-    { name: 'cloudflare', key: process.env.CLOUDFLARE_AI_API_KEY, displayName: 'Cloudflare API Key' },
+    { name: 'cloudflare', key: process.env.CLOUDFLARE_AI_API_KEY, displayName: 'Cloudflare AI API Key' },
   ];
 }
 
@@ -33,65 +33,34 @@ export async function generateResponse(
   sessionId: string
 ): Promise<AIResponse> {
   const systemPrompt = getSystemPrompt(mode, technology, sessionId);
-  console.log("Gemini key exists:", !!process.env.GEMINI_API_KEY);
 
-  // Check all providers - use any that are configured
-  console.log("ENV CHECK:", {
-    GEMINI: !!process.env.GEMINI_API_KEY,
-    GROQ: !!process.env.GROQ_API_KEY,
-    OPENROUTER: !!process.env.OPENROUTER_API_KEY
-  });
-
-  // Filter configured providers - read env vars at runtime
+  // Read environment variables fresh at runtime
   const allProviders = getProviders();
-  const availableProviders = allProviders.filter(p => p.key);
+  const availableProviders = allProviders.filter(p => p.key && p.key.trim() !== '');
+
+  console.log('Available providers:', availableProviders.map(p => p.name));
 
   if (availableProviders.length === 0) {
+    const configuredKeys = allProviders.filter(p => p.key);
+    console.error('No providers with valid keys. Keys present:', configuredKeys.map(p => p.name));
     const allProviderNames = allProviders.map(p => p.displayName);
     throw new Error(`No AI providers configured. Set one of: ${allProviderNames.join(', ')}`);
   }
 
-  // Parallel execution with load splitting for best response
-  const promises = availableProviders.map(async (provider) => {
+  // Try providers sequentially until one succeeds (best to good)
+  for (const provider of availableProviders) {
     try {
+      console.log(`Trying provider: ${provider.name}`);
       const response = await callProvider({ name: provider.name, key: provider.key! }, systemPrompt, message);
-      return { success: true, response, provider: provider.name };
+      console.log(`Success with provider: ${provider.name}`);
+      return response;
     } catch (error) {
       console.error(`${provider.name} failed:`, error instanceof Error ? error.message : error);
-      return { success: false, error, provider: provider.name };
+      // Continue to next provider
     }
-  });
-
-  const results = await Promise.allSettled(promises);
-  const successful = results
-    .filter((result): result is PromiseFulfilledResult<any> =>
-      result.status === 'fulfilled' && result.value.success
-    )
-    .map(result => result.value);
-
-  // Log all failures with details
-  results.forEach((result, index) => {
-    const provider = availableProviders[index];
-    if (result.status === 'fulfilled' && !result.value.success) {
-      console.error(`Provider ${provider.name} failed:`, result.value.error);
-    } else if (result.status === 'rejected') {
-      console.error(`Provider ${provider.name} rejected:`, result.reason);
-    }
-  });
-
-  if (successful.length === 0) {
-    throw new Error('All providers failed - check individual provider errors above');
   }
 
-  // Return the best response using simple scoring based on response length and provider reliability
-  const rankedResults = successful.sort((a, b) => {
-    // Prefer responses with more content and from more reliable providers
-    const scoreA = a.response.content.length + (a.provider === 'gemini' ? 100 : 0) + (a.provider === 'groq' ? 80 : 0);
-    const scoreB = b.response.content.length + (b.provider === 'gemini' ? 100 : 0) + (b.provider === 'groq' ? 80 : 0);
-    return scoreB - scoreA;
-  });
-
-  return rankedResults[0].response;
+  throw new Error('All providers failed - check individual provider errors above');
 }
 
 function getSystemPrompt(mode: string, technology: string, sessionId: string): string {
