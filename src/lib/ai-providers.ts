@@ -82,6 +82,7 @@ export async function generateResponse(
   }
 
   // Try providers sequentially until one succeeds (best to good)
+  const providerErrors: string[] = [];
   for (const provider of availableProviders) {
     try {
       console.log(`Trying provider: ${provider.name}`);
@@ -89,12 +90,14 @@ export async function generateResponse(
       console.log(`Success with provider: ${provider.name}`);
       return response;
     } catch (error) {
-      console.error(`${provider.name} failed:`, error instanceof Error ? error.message : error);
-      // Continue to next provider
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      console.error(`${provider.name} failed:`, errorMsg);
+      providerErrors.push(`${provider.name}: ${errorMsg}`);
     }
   }
 
-  throw new Error('All providers failed - check individual provider errors above');
+  const detailedError = `All providers failed:\n${providerErrors.join('\n')}`;
+  throw new Error(detailedError);
 }
 
 function getSystemPrompt(mode: string, technology: string, sessionId: string): string {
