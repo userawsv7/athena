@@ -63,7 +63,7 @@ export async function generateResponse(
       const response = await callProvider({ name: provider.name, key: provider.key! }, systemPrompt, message);
       return { success: true, response, provider: provider.name };
     } catch (error) {
-      console.error(`${provider.name} failed:`, error);
+      console.error(`${provider.name} failed:`, error instanceof Error ? error.message : error);
       return { success: false, error, provider: provider.name };
     }
   });
