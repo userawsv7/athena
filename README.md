@@ -243,6 +243,51 @@ A topic is complete only when the learner can:
 **Database (Optional - uses in-memory fallback):**
 - `DATABASE_URL` - PostgreSQL connection string
 
+### Free Database Options (if you want persistent storage):
+
+#### 1. **Neon (Recommended - Free Tier)**
+```bash
+# Sign up at https://neon.tech
+# Create a project → Get connection string
+DATABASE_URL="postgresql://user:pass@ep-xxx.region.aws.neon.tech/dbname?sslmode=require"
+
+# Features: Serverless, auto-sleep, 0.5GB storage, unlimited projects
+```
+
+#### 2. **Supabase (Free Tier)**
+```bash
+# Sign up at https://supabase.com
+# Create project → Settings → Database → Connection string
+DATABASE_URL="postgresql://postgres:xxx@db.xxx.supabase.co:5432/postgres"
+
+# Features: 500MB database, auth, realtime, 2GB file storage
+```
+
+#### 3. **PlanetScale (Free Tier)**
+```bash
+# Sign up at https://planetscale.com
+# Create database → Connect → Generate password
+DATABASE_URL="mysql://xxx@xxx.pscale_pw_xxx/xxx?sslaccept=strict"
+
+# Features: MySQL, 5GB storage, branching, serverless
+```
+
+#### 4. **Railway (Free $5/month credit)**
+```bash
+# Sign up at https://railway.app
+# Deploy PostgreSQL template → Get connection string
+DATABASE_URL="postgresql://postgres:xxx@containers-us-west-xxx.railway.app:5432/railway"
+
+# Features: $5 free credit/month, easy deployment
+```
+
+#### Quick Setup Commands:
+```bash
+# After getting DATABASE_URL, run:
+npm run db:push          # Push schema to database
+npm run db:studio        # Open database browser
+```
+
 **AI Provider API Keys (At least one required):**
 Add one or more of these to your `.env.local` file:
 

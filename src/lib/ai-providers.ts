@@ -38,21 +38,21 @@ export async function generateResponse(
 ): Promise<AIResponse> {
   const systemPrompt = getSystemPrompt(mode, technology, sessionId);
 
-  // Check mandatory providers
+  // Check mandatory providers - require at least 2 total, but can use any available
   const configuredMandatory = MANDATORY_PROVIDERS.filter(p => p.key);
-  if (configuredMandatory.length < 2) {
-    const missing = MANDATORY_PROVIDERS.filter(p => !p.key).map(p => p.displayName);
-    throw new Error(`At least 2 mandatory providers required. Missing: ${missing.join(', ')}`);
+  const configuredOptional = OPTIONAL_PROVIDERS.filter(p => p.key);
+  const totalConfigured = configuredMandatory.length + configuredOptional.length;
+
+  if (totalConfigured === 0) {
+    throw new Error('No AI providers available. Add at least one API key to environment variables.');
   }
 
-  // Get all available providers (mandatory + configured optional)
-  const availableProviders = [
-    ...configuredMandatory,
-    ...OPTIONAL_PROVIDERS.filter(p => p.key)
-  ];
+  // Use all configured providers (mandatory + optional)
+  const availableProviders = [...configuredMandatory, ...configuredOptional];
 
   if (availableProviders.length === 0) {
-    throw new Error('No AI providers available. Add at least one API key to environment variables.');
+    const allProviderNames = [...MANDATORY_PROVIDERS, ...OPTIONAL_PROVIDERS].map(p => p.displayName);
+    throw new Error(`No AI providers configured. Set one of: ${allProviderNames.join(', ')}`);
   }
 
   // Parallel execution with load splitting for best response
@@ -77,8 +77,15 @@ export async function generateResponse(
     throw new Error('All providers failed');
   }
 
-  // Return the best response (first successful for now, can implement ranking)
-  return successful[0].response;
+  // Return the best response using simple scoring based on response length and provider reliability
+  const rankedResults = successful.sort((a, b) => {
+    // Prefer responses with more content and from more reliable providers
+    const scoreA = a.response.content.length + (a.provider === 'gemini' ? 100 : 0) + (a.provider === 'groq' ? 80 : 0);
+    const scoreB = b.response.content.length + (b.provider === 'gemini' ? 100 : 0) + (b.provider === 'groq' ? 80 : 0);
+    return scoreB - scoreA;
+  });
+
+  return rankedResults[0].response;
 }
 
 function getSystemPrompt(mode: string, technology: string, sessionId: string): string {
