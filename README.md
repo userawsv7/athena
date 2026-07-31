@@ -222,6 +222,60 @@ A topic is complete only when the learner can:
 
 ---
 
+## Environment Variables Setup
+
+### Required Variables
+
+**Database (Optional - uses in-memory fallback):**
+- `DATABASE_URL` - PostgreSQL connection string
+
+**AI Provider API Keys (At least one required):**
+Add one or more of these to your `.env.local` file:
+
+```bash
+# Copy the example file
+cp .env.example .env.local
+
+# Choose ONE or more AI providers:
+
+# Primary recommendation (fastest)
+GROQ_API_KEY=your_groq_api_key_here
+
+# Fallback providers
+GEMINI_API_KEY=your_gemini_api_key_here
+HF_API_KEY=your_huggingface_api_key_here
+OPENROUTER_API_KEY=your_openrouter_api_key_here
+MISTRAL_API_KEY=your_mistral_api_key_here
+COHERE_API_KEY=your_cohere_api_key_here
+DEEPINFRA_API_KEY=your_deepinfra_api_key_here
+CEREBRAS_API_KEY=your_cerebras_api_key_here
+SAMBANOVA_API_KEY=your_sambanova_api_key_here
+FIREWORKS_API_KEY=your_fireworks_api_key_here
+REPLICATE_API_KEY=your_replicate_api_key_here
+CLOUDFLARE_AI_API_KEY=your_cloudflare_ai_api_key_here
+```
+
+### Vercel Deployment
+
+1. Go to your Vercel dashboard
+2. Select your project → Settings → Environment Variables
+3. Add the same variables:
+   - `GROQ_API_KEY` (or any other provider key)
+   - Optional: `DATABASE_URL` for persistent storage
+4. Redeploy after adding variables
+
+### Getting API Keys
+
+- **GROQ**: https://console.groq.com/keys (Fastest, recommended)
+- **Google Gemini**: https://makersuite.google.com/app/apikey
+- **Hugging Face**: https://huggingface.co/settings/tokens
+- **OpenRouter**: https://openrouter.ai/keys
+- **Mistral**: https://console.mistral.ai/api-keys
+- **Cohere**: https://dashboard.cohere.ai/api-keys
+- And others from their respective platforms
+
+---
+
 You are not a chatbot.
 
 You are AthenaForge: A continuous engineering mentor that turns problems into understanding.

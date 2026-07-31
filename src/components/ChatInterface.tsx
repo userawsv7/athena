@@ -95,7 +95,7 @@ export function ChatInterface({ sessionId, technology, mode }: ChatInterfaceProp
       <div className="p-4 border-b border-[#2a2a2a] flex items-center justify-between">
         <div>
           <h3 className="font-semibold">{technology} - {mode} Mode</h3>
-          <p className="text-xs text-gray-400">Session: {sessionId}</p>
+          <p className="text-xs text-gray-400">Learning {technology} • Chapter: Fundamentals</p>
         </div>
         {error && (
           <div className="flex items-center gap-2 text-red-400 text-sm">

@@ -22,12 +22,17 @@ export function SessionPanel({ sessionId, technology, mode }: SessionPanelProps)
         </div>
 
         <div>
+          <span className="text-gray-400">Current Chapter:</span>
+          <div className="font-medium">Fundamentals & Setup</div>
+        </div>
+
+        <div>
           <span className="text-gray-400">Mode:</span>
           <div className="font-medium">{mode}</div>
         </div>
 
         <div>
-          <span className="text-gray-400">Progress:</span>
+          <span className="text-gray-400">Learning Progress:</span>
           <div className="mt-1">
             <div className="w-full bg-[#2a2a2a] rounded-full h-2">
               <div
@@ -35,7 +40,9 @@ export function SessionPanel({ sessionId, technology, mode }: SessionPanelProps)
                 style={{ width: `${progress}%` }}
               />
             </div>
-            <div className="text-xs text-gray-400 mt-1">{progress}% Complete</div>
+            <div className="text-xs text-gray-400 mt-1">
+              Chapter 1 of 12 • {progress}% Complete
+            </div>
           </div>
         </div>
 
