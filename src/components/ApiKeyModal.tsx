@@ -51,7 +51,11 @@ export function ApiKeyModal({ isOpen, onClose, onSave }: ApiKeyModalProps) {
 
     // Auto-select when key is entered
     if (value.trim()) {
-      setSelectedKeys(prev => new Set([...prev, providerName]));
+      setSelectedKeys(prev => {
+        const next = new Set(prev);
+        next.add(providerName);
+        return next;
+      });
     } else {
       setSelectedKeys(prev => {
         const next = new Set(prev);
