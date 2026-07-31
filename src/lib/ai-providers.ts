@@ -69,8 +69,18 @@ export async function generateResponse(
     )
     .map(result => result.value);
 
+  // Log all failures with details
+  results.forEach((result, index) => {
+    const provider = availableProviders[index];
+    if (result.status === 'fulfilled' && !result.value.success) {
+      console.error(`Provider ${provider.name} failed:`, result.value.error);
+    } else if (result.status === 'rejected') {
+      console.error(`Provider ${provider.name} rejected:`, result.reason);
+    }
+  });
+
   if (successful.length === 0) {
-    throw new Error('All providers failed');
+    throw new Error('All providers failed - check individual provider errors above');
   }
 
   // Return the best response using simple scoring based on response length and provider reliability
@@ -125,26 +135,39 @@ async function callProvider(
   // This is a simplified version - expand for each provider
 
   if (provider.name === 'gemini' && provider.key) {
-    const genAI = new GoogleGenerativeAI(provider.key);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    try {
+      console.log(`[Gemini] Attempting with key length: ${provider.key.length}`);
+      const genAI = new GoogleGenerativeAI(provider.key);
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
-    const result = await model.generateContent({
-      contents: [{
-        role: 'user',
-        parts: [{ text: `${systemPrompt}\n\n${message}` }],
-      }],
-    });
+      const result = await model.generateContent({
+        contents: [{
+          role: 'user',
+          parts: [{ text: `${systemPrompt}\n\n${message}` }],
+        }],
+      });
 
-    const response = result.response;
-    return {
-      content: response.text(),
-      metadata: {
-        provider: 'gemini',
-        tokens: response.usageMetadata?.totalTokenCount || 0,
-      },
-    };
+      const response = result.response;
+      console.log(`[Gemini] Success - Response length: ${response.text().length}`);
+      return {
+        content: response.text(),
+        metadata: {
+          provider: 'gemini',
+          tokens: response.usageMetadata?.totalTokenCount || 0,
+        },
+      };
+    } catch (error: any) {
+      console.error(`[Gemini] API Error:`, {
+        message: error.message,
+        status: error.status,
+        statusText: error.statusText,
+        details: error.errorDetails || error.details
+      });
+      throw error;
+    }
   }
 
   // Add implementations for other providers
+  console.error(`[Provider] ${provider.name} not implemented`);
   throw new Error(`Provider ${provider.name} not implemented`);
 }
