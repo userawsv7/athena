@@ -70,7 +70,11 @@ export async function generateResponse(
   // Then add environment variable providers
   envProviders.forEach(provider => {
     if (provider.key && provider.key.trim() !== '' && !availableProviders.find(p => p.name === provider.name)) {
-      availableProviders.push(provider);
+      availableProviders.push({
+        name: provider.name,
+        key: provider.key!,
+        displayName: provider.displayName
+      });
     }
   });
 
