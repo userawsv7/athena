@@ -5,7 +5,8 @@ import { ModeSelector } from '@/components/ModeSelector';
 import { ChatInterface } from '@/components/ChatInterface';
 import { SessionPanel } from '@/components/SessionPanel';
 import { TechnologySelector } from '@/components/TechnologySelector';
-import { History, Play, X } from 'lucide-react';
+import { ApiKeyModal } from '@/components/ApiKeyModal';
+import { History, Play, X, Key } from 'lucide-react';
 
 interface PreviousSession {
   sessionId: string;
@@ -21,6 +22,18 @@ export default function AthenaForge() {
   const [isSessionActive, setIsSessionActive] = useState(false);
   const [previousSessions, setPreviousSessions] = useState<PreviousSession[]>([]);
   const [showHistory, setShowHistory] = useState(false);
+  const [showApiKeyModal, setShowApiKeyModal] = useState(false);
+  const [hasApiKeys, setHasApiKeys] = useState(false);
+
+  // Check for API keys on mount
+  useEffect(() => {
+    const savedKeys = localStorage.getItem('athenaApiKeys');
+    if (savedKeys) {
+      const keys = JSON.parse(savedKeys);
+      const keyCount = Object.keys(keys).filter(k => keys[k]).length;
+      setHasApiKeys(keyCount >= 2);
+    }
+  }, []);
 
   // Load previous sessions from localStorage
   useEffect(() => {
@@ -80,6 +93,17 @@ export default function AthenaForge() {
             <p className="text-sm text-gray-400">"Total attention faces the problem. Like a flame, it burns through until the problem disappears."</p>
           </div>
           <div className="flex items-center gap-4">
+            <button
+              onClick={() => setShowApiKeyModal(true)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors text-sm ${
+                hasApiKeys
+                  ? 'bg-green-600/20 text-green-400 border border-green-500/50'
+                  : 'bg-yellow-600/20 text-yellow-400 border border-yellow-500/50'
+              }`}
+            >
+              <Key className="w-4 h-4" />
+              {hasApiKeys ? 'API Keys OK' : 'Setup API Keys'}
+            </button>
             {sessionId && (
               <div className="text-sm text-gray-400">Session: {sessionId}</div>
             )}
@@ -177,6 +201,15 @@ export default function AthenaForge() {
           </div>
         )}
       </main>
+
+      <ApiKeyModal
+        isOpen={showApiKeyModal}
+        onClose={() => setShowApiKeyModal(false)}
+        onSave={(keys) => {
+          const keyCount = Object.keys(keys).length;
+          setHasApiKeys(keyCount >= 2);
+        }}
+      />
     </div>
   );
 }
