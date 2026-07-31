@@ -26,6 +26,12 @@ export function ChatInterface({ sessionId, technology, mode }: ChatInterfaceProp
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // API Keys from browser localStorage
+  const getApiKeys = () => {
+    const savedKeys = localStorage.getItem('athenaApiKeys');
+    return savedKeys ? JSON.parse(savedKeys) : {};
+  };
+
   const sendMessage = async () => {
     if (!input.trim() || isLoading) return;
 
@@ -44,6 +50,7 @@ export function ChatInterface({ sessionId, technology, mode }: ChatInterfaceProp
           message: userMessage,
           mode,
           technology,
+          apiKeys: getApiKeys(),
         }),
       });
 

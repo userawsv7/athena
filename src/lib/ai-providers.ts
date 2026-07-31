@@ -76,6 +76,11 @@ export async function generateResponse(
     throw new Error(`No AI providers configured. Set one of: ${allProviderNames.join(', ')}`);
   }
 
+  // Ensure minimum 2 providers are available
+  if (availableProviders.length < 2) {
+    throw new Error('At least 2 API providers are required. Please provide at least 2 different API keys.');
+  }
+
   // Try providers sequentially until one succeeds (best to good)
   for (const provider of availableProviders) {
     try {
@@ -373,6 +378,236 @@ async function callProvider(
           metadata: {
             provider: 'mistral',
             tokens: mistralData.usage?.total_tokens || 0,
+          },
+        };
+
+      case 'cohere':
+        console.log(`[Cohere] Attempting with key length: ${provider.key.length}`);
+        const cohereResponse = await fetch('https://api.cohere.ai/v1/chat', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${provider.key}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'command-r-plus',
+            message: fullPrompt,
+            max_tokens: 4000,
+          }),
+        });
+
+        if (!cohereResponse.ok) {
+          const error = await cohereResponse.text();
+          throw new Error(`Cohere API error: ${cohereResponse.status} - ${error}`);
+        }
+
+        const cohereData = await cohereResponse.json();
+        console.log(`[Cohere] Success - Response length: ${cohereData.text.length}`);
+        return {
+          content: cohereData.text,
+          metadata: {
+            provider: 'cohere',
+            tokens: cohereData.meta?.tokens?.input_tokens + cohereData.meta?.tokens?.output_tokens || 0,
+          },
+        };
+
+      case 'deepinfra':
+        console.log(`[DeepInfra] Attempting with key length: ${provider.key.length}`);
+        const deepinfraResponse = await fetch('https://api.deepinfra.com/v1/openai/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${provider.key}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'meta-llama/Meta-Llama-3-70B-Instruct',
+            messages: [{ role: 'user', content: fullPrompt }],
+            max_tokens: 4000,
+          }),
+        });
+
+        if (!deepinfraResponse.ok) {
+          const error = await deepinfraResponse.text();
+          throw new Error(`DeepInfra API error: ${deepinfraResponse.status} - ${error}`);
+        }
+
+        const deepinfraData = await deepinfraResponse.json();
+        console.log(`[DeepInfra] Success - Response length: ${deepinfraData.choices[0].message.content.length}`);
+        return {
+          content: deepinfraData.choices[0].message.content,
+          metadata: {
+            provider: 'deepinfra',
+            tokens: deepinfraData.usage?.total_tokens || 0,
+          },
+        };
+
+      case 'cerebras':
+        console.log(`[Cerebras] Attempting with key length: ${provider.key.length}`);
+        const cerebrasResponse = await fetch('https://api.cerebras.ai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${provider.key}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'llama3.1-70b',
+            messages: [{ role: 'user', content: fullPrompt }],
+            max_tokens: 4000,
+          }),
+        });
+
+        if (!cerebrasResponse.ok) {
+          const error = await cerebrasResponse.text();
+          throw new Error(`Cerebras API error: ${cerebrasResponse.status} - ${error}`);
+        }
+
+        const cerebrasData = await cerebrasResponse.json();
+        console.log(`[Cerebras] Success - Response length: ${cerebrasData.choices[0].message.content.length}`);
+        return {
+          content: cerebrasData.choices[0].message.content,
+          metadata: {
+            provider: 'cerebras',
+            tokens: cerebrasData.usage?.total_tokens || 0,
+          },
+        };
+
+      case 'sambanova':
+        console.log(`[SambaNova] Attempting with key length: ${provider.key.length}`);
+        const sambanovaResponse = await fetch('https://api.sambanova.ai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${provider.key}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'Meta-Llama-3.1-70B-Instruct',
+            messages: [{ role: 'user', content: fullPrompt }],
+            max_tokens: 4000,
+          }),
+        });
+
+        if (!sambanovaResponse.ok) {
+          const error = await sambanovaResponse.text();
+          throw new Error(`SambaNova API error: ${sambanovaResponse.status} - ${error}`);
+        }
+
+        const sambanovaData = await sambanovaResponse.json();
+        console.log(`[SambaNova] Success - Response length: ${sambanovaData.choices[0].message.content.length}`);
+        return {
+          content: sambanovaData.choices[0].message.content,
+          metadata: {
+            provider: 'sambanova',
+            tokens: sambanovaData.usage?.total_tokens || 0,
+          },
+        };
+
+      case 'fireworks':
+        console.log(`[Fireworks] Attempting with key length: ${provider.key.length}`);
+        const fireworksResponse = await fetch('https://api.fireworks.ai/inference/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${provider.key}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'accounts/fireworks/models/llama-v3-70b-instruct',
+            messages: [{ role: 'user', content: fullPrompt }],
+            max_tokens: 4000,
+          }),
+        });
+
+        if (!fireworksResponse.ok) {
+          const error = await fireworksResponse.text();
+          throw new Error(`Fireworks API error: ${fireworksResponse.status} - ${error}`);
+        }
+
+        const fireworksData = await fireworksResponse.json();
+        console.log(`[Fireworks] Success - Response length: ${fireworksData.choices[0].message.content.length}`);
+        return {
+          content: fireworksData.choices[0].message.content,
+          metadata: {
+            provider: 'fireworks',
+            tokens: fireworksData.usage?.total_tokens || 0,
+          },
+        };
+
+      case 'replicate':
+        console.log(`[Replicate] Attempting with key length: ${provider.key.length}`);
+        const replicateResponse = await fetch('https://api.replicate.com/v1/predictions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Token ${provider.key}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            version: 'meta/meta-llama-3-70b-instruct',
+            input: {
+              prompt: fullPrompt,
+              max_new_tokens: 4000,
+            },
+          }),
+        });
+
+        if (!replicateResponse.ok) {
+          const error = await replicateResponse.text();
+          throw new Error(`Replicate API error: ${replicateResponse.status} - ${error}`);
+        }
+
+        const replicateData = await replicateResponse.json();
+
+        // Poll for completion
+        let replicateResult = replicateData;
+        while (replicateResult.status !== 'succeeded' && replicateResult.status !== 'failed') {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          const pollResponse = await fetch(replicateResult.urls.get, {
+            headers: { 'Authorization': `Token ${provider.key}` },
+          });
+          replicateResult = await pollResponse.json();
+        }
+
+        if (replicateResult.status === 'failed') {
+          throw new Error('Replicate prediction failed');
+        }
+
+        const replicateContent = replicateResult.output.join('');
+        console.log(`[Replicate] Success - Response length: ${replicateContent.length}`);
+        return {
+          content: replicateContent,
+          metadata: {
+            provider: 'replicate',
+            tokens: 0,
+          },
+        };
+
+      case 'cloudflare':
+        console.log(`[Cloudflare] Attempting with key length: ${provider.key.length}`);
+        const accountId = process.env.CLOUDFLARE_ACCOUNT_ID || '';
+        const cloudflareResponse = await fetch(
+          `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/@cf/meta/llama-3-70b-instruct`,
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${provider.key}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              messages: [{ role: 'user', content: fullPrompt }],
+            }),
+          }
+        );
+
+        if (!cloudflareResponse.ok) {
+          const error = await cloudflareResponse.text();
+          throw new Error(`Cloudflare API error: ${cloudflareResponse.status} - ${error}`);
+        }
+
+        const cloudflareData = await cloudflareResponse.json();
+        console.log(`[Cloudflare] Success - Response length: ${cloudflareData.result.response.length}`);
+        return {
+          content: cloudflareData.result.response,
+          metadata: {
+            provider: 'cloudflare',
+            tokens: 0,
           },
         };
 
