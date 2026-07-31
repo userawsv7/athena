@@ -215,13 +215,7 @@ OUTPUT STRUCTURE:
    - Mind maps (concept connections)
 
 4. HANDS-ON SECTION
-   ```bash
-   # Command with full explanation
-   $ kubectl get pods -n production
-     Output: [Expected output with explanation]
-     Why: [Production context]
-     Gotchas: [Common mistakes]
-   ```
+   Commands shown as: $ command [explanation]
 
 5. PRODUCTION CHECKPOINT
    □ Understand the problem it solves
