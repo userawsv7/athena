@@ -11,7 +11,6 @@ interface AIResponse {
 // Mandatory providers (at least 2 required)
 const MANDATORY_PROVIDERS = [
   { name: 'gemini', key: process.env.GEMINI_API_KEY, displayName: 'Google Gemini API Key' },
-  { name: 'groq', key: process.env.GROQ_API_KEY, displayName: 'Groq API Key' },
 ];
 
 // Optional providers
